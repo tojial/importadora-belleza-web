@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Importadora Belleza DB — Sistema de Gestión</title>
-    <!-- CDN de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,6 +27,7 @@
             --error: #a03040;
             --advertencia: #b8860b;
             --info: #4a5d99;
+            --naranja: #c97a2b;
         }
 
         body {
@@ -98,7 +98,7 @@
             color: #fff; border-color: var(--morado); box-shadow: 0 4px 15px rgba(106, 76, 147, 0.4);
         }
 
-        /* ---------- CONTENIDO DE PESTAÑAS ---------- */
+        /* ---------- CONTENIDO ---------- */
         .seccion { display: none; }
         .seccion.activa { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -131,6 +131,7 @@
             border-radius: 7px; font-size: 13.5px; font-family: inherit; transition: 0.2s;
             background: var(--bg-secundario); color: var(--texto);
         }
+        input[type="file"] { padding: 8px; background: var(--bg-principal); cursor: pointer; }
         input::placeholder, textarea::placeholder { color: var(--texto-tenue); }
         input:focus, select:focus, textarea:focus {
             outline: none; border-color: var(--morado); background: var(--bg-principal);
@@ -151,15 +152,29 @@
             box-shadow: 0 4px 15px rgba(106, 76, 147, 0.4); transform: translateY(-1px);
         }
         button:active { transform: translateY(0); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         button.secundario { background: var(--bg-secundario); border-color: var(--borde-claro); color: var(--texto-suave); }
         button.secundario:hover { background: var(--bg-tarjeta-hover); color: var(--texto); border-color: var(--morado); }
         button.peligro { background: linear-gradient(135deg, #5a1a25, var(--error)); border-color: var(--error); }
         button.peligro:hover { background: linear-gradient(135deg, var(--error), #c04050); }
 
+        .btn-agregar {
+            background: linear-gradient(135deg, var(--morado), var(--azul-claro));
+            border: none; font-size: 14px; font-weight: 700; padding: 14px 20px;
+            margin-bottom: 20px; width: auto; display: inline-block;
+            box-shadow: 0 4px 15px rgba(106, 76, 147, 0.4);
+        }
+        .btn-agregar:hover {
+            background: linear-gradient(135deg, var(--morado-claro), var(--azul));
+            transform: translateY(-2px); box-shadow: 0 6px 20px rgba(106, 76, 147, 0.6);
+        }
+
         .fila-doble { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+        /* ---------- TABLAS ---------- */
+        .tabla-contenedor { overflow-x: auto; margin-top: 12px; }
         table {
-            width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12.5px;
+            width: 100%; border-collapse: collapse; font-size: 12.5px;
             border-radius: 8px; overflow: hidden; border: 1px solid var(--borde);
         }
         th, td { border-bottom: 1px solid var(--borde); padding: 10px 8px; text-align: left; }
@@ -179,6 +194,7 @@
         .error { background: rgba(160, 48, 64, 0.12); color: #e08090; border-left-color: var(--error); display: block; }
         .info { background: rgba(74, 93, 153, 0.12); color: #8ba0d8; border-left-color: var(--info); display: block; }
 
+        /* ---------- ESTADÍSTICAS ---------- */
         .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
         .stat {
             background: var(--bg-tarjeta); border: 1px solid var(--borde); padding: 20px 18px;
@@ -189,26 +205,107 @@
         .stat .num { font-size: 26px; font-weight: 700; color: var(--texto); letter-spacing: 0.5px; }
         .stat .lbl { font-size: 11px; color: var(--texto-suave); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
+        /* ---------- BADGES ---------- */
         .badge {
-            display: inline-block; padding: 3px 9px; border-radius: 10px; font-size: 10.5px;
+            display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 10.5px;
             font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; border: 1px solid transparent;
         }
         .badge.verde { background: rgba(61, 122, 92, 0.2); color: #6ec99a; border-color: var(--exito); }
         .badge.rojo { background: rgba(160, 48, 64, 0.2); color: #e08090; border-color: var(--error); }
         .badge.amarillo { background: rgba(184, 134, 11, 0.2); color: #d8b040; border-color: var(--advertencia); }
         .badge.azul { background: rgba(74, 93, 153, 0.2); color: #8ba0d8; border-color: var(--info); }
+        .badge.naranja { background: rgba(201, 122, 43, 0.2); color: #e8a35c; border-color: var(--naranja); }
         .badge.gris { background: rgba(110, 110, 136, 0.2); color: var(--texto-suave); border-color: var(--texto-tenue); }
 
+        /* ---------- DETALLE PEDIDO ---------- */
         .detalle-pedido { background: var(--bg-secundario); border: 1px dashed var(--borde-claro); padding: 14px; border-radius: 8px; margin-top: 12px; }
         .detalle-pedido .item { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
         .detalle-pedido .item input, .detalle-pedido .item select { margin-top: 0; }
         .detalle-pedido .item button { margin: 0; width: auto; padding: 8px 12px; background: linear-gradient(135deg, #5a1a25, var(--error)); border-color: var(--error); font-size: 12px; }
+        .detalle-pedido .item .stock-info { font-size: 10px; color: var(--texto-tenue); margin-top: 2px; }
 
         .total-pedido {
             text-align: right; font-size: 15px; font-weight: 700; color: var(--morado-claro);
             margin-top: 14px; padding: 12px; background: var(--bg-secundario);
             border-radius: 8px; border: 1px solid var(--borde); letter-spacing: 0.4px;
         }
+
+        /* ---------- FILTROS ---------- */
+        .filtros-bar {
+            display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;
+            background: var(--bg-secundario); padding: 12px; border-radius: 10px;
+            border: 1px solid var(--borde);
+        }
+        .filtros-bar input, .filtros-bar select { width: auto; flex: 1; min-width: 150px; margin-top: 0; }
+        .filtros-bar button { width: auto; margin-top: 0; padding: 10px 18px; }
+
+        /* ---------- CONTADORES ---------- */
+        .contadores-pedidos {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .contador-item {
+            background: var(--bg-tarjeta); border: 1px solid var(--borde); padding: 14px;
+            border-radius: 10px; text-align: center; transition: 0.3s;
+        }
+        .contador-item:hover { border-color: var(--morado); transform: translateY(-2px); }
+        .contador-item .num { font-size: 22px; font-weight: 700; }
+        .contador-item .lbl { font-size: 10px; color: var(--texto-suave); text-transform: uppercase; margin-top: 4px; letter-spacing: 0.5px; }
+        .contador-item.pendiente .num { color: var(--advertencia); }
+        .contador-item.preparando .num { color: var(--naranja); }
+        .contador-item.camino .num { color: var(--info); }
+        .contador-item.entregado .num { color: var(--exito); }
+        .contador-item.cancelado .num { color: var(--error); }
+
+        /* ---------- MODALES ---------- */
+        .modal-fondo {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px);
+            z-index: 1000; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-fondo.activo { display: flex; animation: fadeInModal 0.3s ease; }
+        .modal-contenido {
+            background: var(--bg-tarjeta); border: 1px solid var(--borde-claro);
+            border-radius: 16px; padding: 30px; width: 100%; max-width: 550px;
+            max-height: 90vh; overflow-y: auto; position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); animation: slideInModal 0.3s ease;
+        }
+        .modal-contenido.ancho { max-width: 850px; }
+        .modal-contenido h2 {
+            color: var(--texto); font-size: 18px; margin-bottom: 20px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--borde); font-weight: 600;
+            text-transform: uppercase; display: flex; align-items: center; gap: 10px;
+        }
+        .modal-contenido h2::before {
+            content: ''; width: 4px; height: 20px;
+            background: linear-gradient(180deg, var(--morado-claro), var(--azul-claro)); border-radius: 2px;
+        }
+        .modal-cerrar {
+            position: absolute; top: 15px; right: 15px; background: transparent;
+            border: none; color: var(--texto-suave); font-size: 24px; cursor: pointer;
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: 0.2s; margin: 0; padding: 0;
+        }
+        .modal-cerrar:hover { background: var(--error); color: white; transform: rotate(90deg); }
+        @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideInModal { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* ---------- DETALLE PEDIDO ---------- */
+        .tabla-detalle-pedido { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+        .tabla-detalle-pedido th { background: var(--bg-secundario); color: var(--morado-claro); padding: 10px; text-align: left; }
+        .tabla-detalle-pedido td { padding: 10px; border-bottom: 1px solid var(--borde); }
+        .resumen-totales { margin-top: 20px; padding: 15px; background: var(--bg-secundario); border-radius: 10px; border: 1px solid var(--borde); }
+        .resumen-totales .linea { display: flex; justify-content: space-between; padding: 5px 0; }
+        .resumen-totales .linea.total { font-size: 18px; font-weight: 700; color: var(--morado-claro); border-top: 1px solid var(--borde); margin-top: 10px; padding-top: 10px; }
+
+        .selector-estado { padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; background: var(--bg-secundario); color: var(--texto); border: 1px solid var(--borde); }
+
+        .btn-foto {
+            display: inline-block; padding: 6px 10px; font-size: 11px; 
+            background: var(--exito); color: white; border-radius: 6px; 
+            text-decoration: none; font-weight: 600; margin: 0 2px;
+        }
+        .btn-foto:hover { background: #4c9e75; }
 
         footer { text-align: center; margin-top: 35px; padding: 20px; color: var(--texto-tenue); font-size: 11.5px; letter-spacing: 0.5px; border-top: 1px solid var(--borde); }
         ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -221,31 +318,31 @@
             .detalle-pedido .item { grid-template-columns: 1fr; border-bottom: 1px solid var(--borde); padding-bottom: 10px; }
             header h1 { font-size: 19px; }
             body { padding: 12px; }
+            .modal-contenido { padding: 20px; }
+            .filtros-bar { flex-direction: column; }
+            .filtros-bar input, .filtros-bar select, .filtros-bar button { width: 100%; }
         }
     </style>
 </head>
 <body>
 
 <!-- ============================================================ -->
-<!-- PANTALLA DE LOGIN (Oculta por defecto si no hay sesión) -->
+<!-- LOGIN -->
 <!-- ============================================================ -->
-<div id="login-screen" >
+<div id="login-screen">
     <h1>Importadora <span>Belleza</span></h1>
     <p>Ingresa a tu cuenta para gestionar el sistema</p>
-
     <label>Correo Electrónico</label>
     <input type="email" id="login-email" placeholder="admin@belleza.com">
-
     <label>Contraseña</label>
     <input type="password" id="login-password" placeholder="********">
-
-    <button onclick="iniciarSesion()">Iniciar Sesión</button>
+    <button id="btn-login" onclick="iniciarSesion()">Iniciar Sesión</button>
     <button class="secundario" onclick="registrarUsuario()">Crear Cuenta Nueva</button>
     <div id="msg-login" class="mensaje"></div>
 </div>
 
 <!-- ============================================================ -->
-<!-- APP PRINCIPAL (Oculta hasta que se loguee) -->
+<!-- APP PRINCIPAL -->
 <!-- ============================================================ -->
 <div id="app-screen" style="display: none;">
     <header>
@@ -269,17 +366,29 @@
         <div class="stats">
             <div class="stat"><div class="num" id="stat-productos">0</div><div class="lbl">Productos</div></div>
             <div class="stat"><div class="num" id="stat-clientes">0</div><div class="lbl">Clientes</div></div>
-            <div class="stat"><div class="num" id="stat-pedidos">0</div><div class="lbl">Pedidos</div></div>
-            <div class="stat"><div class="num" id="stat-stock-bajo">0</div><div class="lbl">Stock Bajo</div></div>
+            <div class="stat"><div class="num" id="stat-pedidos">0</div><div class="lbl">Pedidos Totales</div></div>
+            <div class="stat"><div class="num" id="stat-pendientes">0</div><div class="lbl">Pendientes</div></div>
+            <div class="stat"><div class="num" id="stat-entregados">0</div><div class="lbl">Entregados</div></div>
             <div class="stat"><div class="num" id="stat-ventas">Bs 0</div><div class="lbl">Ventas Totales</div></div>
         </div>
         <div class="contenedor">
             <div class="tarjeta ancho">
+                <h2>Pedidos Recientes</h2>
+                <div class="tabla-contenedor">
+                    <table id="tabla-dash-pedidos">
+                        <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="tarjeta ancho">
                 <h2>Últimos Productos</h2>
-                <table id="tabla-dash-productos">
-                    <thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Stock</th><th>Precio Venta</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <div class="tabla-contenedor">
+                    <table id="tabla-dash-productos">
+                        <thead><tr><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Stock</th><th>Precio Venta</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -287,29 +396,26 @@
     <!-- PRODUCTOS -->
     <div id="productos" class="seccion">
         <div class="contenedor">
-            <div class="tarjeta">
-                <h2>Registrar Producto</h2>
-                <label>Nombre</label><input type="text" id="p_nombre" placeholder="Sérum Facial">
-                <label>Descripción</label><textarea id="p_descripcion"></textarea>
-                <label>Categoría</label><select id="p_categoria"><option value="">-- Seleccione --</option></select>
-                <div class="fila-doble">
-                    <div><label>Precio Costo</label><input type="number" id="p_precio_costo" step="0.01"></div>
-                    <div><label>Precio Venta</label><input type="number" id="p_precio_venta" step="0.01"></div>
-                </div>
-                <div class="fila-doble">
-                    <div><label>Stock Actual</label><input type="number" id="p_stock_actual"></div>
-                    <div><label>Stock Mínimo</label><input type="number" id="p_stock_minimo" value="5"></div>
-                </div>
-                <button onclick="registrarProducto()">Guardar Producto</button>
-                <div id="msg-producto" class="mensaje"></div>
-            </div>
             <div class="tarjeta ancho">
-                <h2>Lista de Productos</h2>
-                <button onclick="cargarProductos()">Recargar lista</button>
-                <table id="tabla-productos">
-                    <thead><tr><th>ID</th><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Costo</th><th>Venta</th><th>Stock</th><th>Estado</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <h2>Gestión de Productos</h2>
+                <button class="btn-agregar" onclick="abrirModal('modal-producto')">+ Añadir Producto</button>
+                <button onclick="cargarProductos()" style="width: auto; margin-left: 10px; background: var(--bg-secundario); border-color: var(--borde-claro); color: var(--texto-suave);">Recargar lista</button>
+                <div class="filtros-bar" style="margin-top:15px;">
+                    <input type="text" id="filtro-buscar-producto" placeholder="Buscar producto por nombre o SKU..." oninput="filtrarProductos()">
+                    <select id="filtro-estado-producto" onchange="filtrarProductos()">
+                        <option value="">Todos los estados</option>
+                        <option value="OK">Stock OK</option>
+                        <option value="bajo">Stock Bajo</option>
+                        <option value="agotado">Agotado</option>
+                    </select>
+                    <button class="secundario" onclick="limpiarFiltrosProductos()">Limpiar</button>
+                </div>
+                <div class="tabla-contenedor">
+                    <table id="tabla-productos">
+                        <thead><tr><th>ID</th><th>SKU</th><th>Nombre</th><th>Categoría</th><th>Costo</th><th>Venta</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -317,23 +423,20 @@
     <!-- CLIENTES -->
     <div id="clientes" class="seccion">
         <div class="contenedor">
-            <div class="tarjeta">
-                <h2>Registrar Cliente</h2>
-                <label>Nombre</label><input type="text" id="c_nombre">
-                <label>Apellido</label><input type="text" id="c_apellido">
-                <label>Teléfono</label><input type="text" id="c_telefono">
-                <label>Email</label><input type="email" id="c_email">
-                <label>Dirección</label><input type="text" id="c_direccion">
-                <button onclick="registrarCliente()">Guardar Cliente</button>
-                <div id="msg-cliente" class="mensaje"></div>
-            </div>
             <div class="tarjeta ancho">
-                <h2>Lista de Clientes</h2>
-                <button onclick="cargarClientes()">Recargar lista</button>
-                <table id="tabla-clientes">
-                    <thead><tr><th>ID</th><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <h2>Gestión de Clientes</h2>
+                <button class="btn-agregar" onclick="abrirModal('modal-cliente')">+ Añadir Cliente</button>
+                <button onclick="cargarClientes()" style="width: auto; margin-left: 10px; background: var(--bg-secundario); border-color: var(--borde-claro); color: var(--texto-suave);">Recargar lista</button>
+                <div class="filtros-bar" style="margin-top:15px;">
+                    <input type="text" id="filtro-buscar-cliente" placeholder="Buscar cliente por nombre, email o teléfono..." oninput="filtrarClientes()">
+                    <button class="secundario" onclick="limpiarFiltrosClientes()">Limpiar</button>
+                </div>
+                <div class="tabla-contenedor">
+                    <table id="tabla-clientes">
+                        <thead><tr><th>ID</th><th>Nombre</th><th>Apellido</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -341,22 +444,20 @@
     <!-- PROVEEDORES -->
     <div id="proveedores" class="seccion">
         <div class="contenedor">
-            <div class="tarjeta">
-                <h2>Registrar Proveedor</h2>
-                <label>Nombre de la Empresa</label><input type="text" id="pr_empresa">
-                <label>Teléfono</label><input type="text" id="pr_telefono">
-                <label>Email</label><input type="email" id="pr_email">
-                <label>Dirección / País</label><input type="text" id="pr_direccion">
-                <button onclick="registrarProveedor()">Guardar Proveedor</button>
-                <div id="msg-proveedor" class="mensaje"></div>
-            </div>
             <div class="tarjeta ancho">
-                <h2>Lista de Proveedores</h2>
-                <button onclick="cargarProveedores()">Recargar lista</button>
-                <table id="tabla-proveedores">
-                    <thead><tr><th>ID</th><th>Empresa</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <h2>Gestión de Proveedores</h2>
+                <button class="btn-agregar" onclick="abrirModal('modal-proveedor')">+ Añadir Proveedor</button>
+                <button onclick="cargarProveedores()" style="width: auto; margin-left: 10px; background: var(--bg-secundario); border-color: var(--borde-claro); color: var(--texto-suave);">Recargar lista</button>
+                <div class="filtros-bar" style="margin-top:15px;">
+                    <input type="text" id="filtro-buscar-proveedor" placeholder="Buscar proveedor..." oninput="filtrarProveedores()">
+                    <button class="secundario" onclick="limpiarFiltrosProveedores()">Limpiar</button>
+                </div>
+                <div class="tabla-contenedor">
+                    <table id="tabla-proveedores">
+                        <thead><tr><th>ID</th><th>Empresa</th><th>Teléfono</th><th>Email</th><th>Dirección</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -365,35 +466,37 @@
     <div id="pedidos" class="seccion">
         <div class="contenedor">
             <div class="tarjeta ancho">
-                <h2>Registrar Nuevo Pedido</h2>
-                <div class="fila-doble">
-                    <div><label>Cliente</label><select id="ped_cliente"></select></div>
-                    <div><label>Repartidor (opcional)</label><select id="ped_repartidor"></select></div>
+                <h2>Gestión de Pedidos</h2>
+                <button class="btn-agregar" onclick="abrirModal('modal-pedido')">+ Nuevo Pedido</button>
+
+                <div class="contadores-pedidos" id="contadores-pedidos">
+                    <div class="contador-item pendiente"><div class="num" id="cont-pendiente">0</div><div class="lbl">Pendientes</div></div>
+                    <div class="contador-item preparando"><div class="num" id="cont-preparando">0</div><div class="lbl">Preparando</div></div>
+                    <div class="contador-item camino"><div class="num" id="cont-camino">0</div><div class="lbl">En Camino</div></div>
+                    <div class="contador-item entregado"><div class="num" id="cont-entregado">0</div><div class="lbl">Entregados</div></div>
+                    <div class="contador-item cancelado"><div class="num" id="cont-cancelado">0</div><div class="lbl">Cancelados</div></div>
                 </div>
-                <div class="fila-doble">
-                    <div><label>Método de Pago</label>
-                        <select id="ped_metodo_pago">
-                            <option value="Efectivo">Efectivo</option>
-                            <option value="Tarjeta">Tarjeta</option>
-                            <option value="Transferencia">Transferencia</option>
-                        </select>
-                    </div>
-                    <div><label>Costo Delivery (Bs)</label><input type="number" id="ped_costo_delivery" value="0" step="0.01"></div>
+
+                <div class="filtros-bar">
+                    <input type="text" id="filtro-buscar-pedido" placeholder="Buscar por cliente o ID..." oninput="filtrarPedidos()">
+                    <select id="filtro-estado-pedido" onchange="filtrarPedidos()">
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Preparando">Preparando</option>
+                        <option value="En camino">En camino</option>
+                        <option value="Entregado">Entregado</option>
+                        <option value="Cancelado">Cancelado</option>
+                    </select>
+                    <input type="date" id="filtro-fecha-pedido" onchange="filtrarPedidos()">
+                    <button class="secundario" onclick="limpiarFiltrosPedidos()">Limpiar Filtros</button>
                 </div>
-                <h2 style="margin-top:24px;">Detalle</h2>
-                <div class="detalle-pedido" id="detalle-pedido"></div>
-                <button class="secundario" onclick="agregarItemPedido()">Agregar Producto</button>
-                <div class="total-pedido" id="total-pedido">Total: Bs 0.00</div>
-                <button onclick="registrarPedido()">Guardar Pedido</button>
-                <div id="msg-pedido" class="mensaje"></div>
-            </div>
-            <div class="tarjeta ancho">
-                <h2>Lista de Pedidos</h2>
-                <button onclick="cargarPedidos()">Recargar lista</button>
-                <table id="tabla-pedidos">
-                    <thead><tr><th>ID</th><th>Cliente</th><th>Repartidor</th><th>Estado</th><th>Total</th><th>Método Pago</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+
+                <div class="tabla-contenedor">
+                    <table id="tabla-pedidos">
+                        <thead><tr><th>ID</th><th>Cliente</th><th>Fecha</th><th>Repartidor</th><th>Total</th><th>Método Pago</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -401,22 +504,16 @@
     <!-- IMPORTACIONES -->
     <div id="importaciones" class="seccion">
         <div class="contenedor">
-            <div class="tarjeta">
-                <h2>Registrar Importación</h2>
-                <label>Proveedor</label><select id="imp_proveedor"></select>
-                <label>Fecha</label><input type="date" id="imp_fecha">
-                <label>Costo Envío (Bs)</label><input type="number" id="imp_costo_envio" step="0.01">
-                <label>Impuestos (Bs)</label><input type="number" id="imp_impuestos" step="0.01">
-                <button onclick="registrarImportacion()">Guardar Importación</button>
-                <div id="msg-importacion" class="mensaje"></div>
-            </div>
             <div class="tarjeta ancho">
-                <h2>Lista de Importaciones</h2>
-                <button onclick="cargarImportaciones()">Recargar lista</button>
-                <table id="tabla-importaciones">
-                    <thead><tr><th>ID</th><th>Proveedor</th><th>Fecha</th><th>Costo Total</th><th>Estado</th></tr></thead>
-                    <tbody></tbody>
-                </table>
+                <h2>Gestión de Importaciones</h2>
+                <button class="btn-agregar" onclick="abrirModal('modal-importacion')">+ Nueva Importación</button>
+                <button onclick="cargarImportaciones()" style="width: auto; margin-left: 10px; background: var(--bg-secundario); border-color: var(--borde-claro); color: var(--texto-suave);">Recargar lista</button>
+                <div class="tabla-contenedor">
+                    <table id="tabla-importaciones">
+                        <thead><tr><th>ID</th><th>Proveedor</th><th>Fecha</th><th>Costo Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -427,12 +524,16 @@
             <div class="tarjeta ancho">
                 <h2>Productos con Stock Bajo</h2>
                 <button onclick="cargarStockBajo()">Consultar</button>
-                <table id="tabla-stock-bajo"><thead><tr><th>SKU</th><th>Nombre</th><th>Stock</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody></tbody></table>
+                <div class="tabla-contenedor">
+                    <table id="tabla-stock-bajo"><thead><tr><th>SKU</th><th>Nombre</th><th>Stock</th><th>Mínimo</th><th>Estado</th></tr></thead><tbody></tbody></table>
+                </div>
             </div>
             <div class="tarjeta ancho">
                 <h2>Ventas por Producto</h2>
                 <button onclick="cargarVentasPorProducto()">Consultar</button>
-                <table id="tabla-ventas"><thead><tr><th>Producto</th><th>Cantidad Vendida</th><th>Total Recaudado</th></tr></thead><tbody></tbody></table>
+                <div class="tabla-contenedor">
+                    <table id="tabla-ventas"><thead><tr><th>Producto</th><th>Cantidad Vendida</th><th>Total Recaudado</th></tr></thead><tbody></tbody></table>
+                </div>
             </div>
         </div>
     </div>
@@ -441,18 +542,234 @@
 </div>
 
 <!-- ============================================================ -->
+<!-- MODALES -->
+<!-- ============================================================ -->
+
+<!-- Modal Producto -->
+<div id="modal-producto" class="modal-fondo">
+    <div class="modal-contenido">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-producto')">×</button>
+        <h2>Registrar Producto</h2>
+        <label>Nombre *</label><input type="text" id="p_nombre" placeholder="Sérum Facial">
+        <label>Descripción</label><textarea id="p_descripcion"></textarea>
+        <label>Categoría *</label><select id="p_categoria"><option value="">-- Seleccione --</option></select>
+        <div class="fila-doble">
+            <div><label>Precio Costo *</label><input type="number" id="p_precio_costo" step="0.01" min="0" placeholder="0.00"></div>
+            <div><label>Precio Venta *</label><input type="number" id="p_precio_venta" step="0.01" min="0" placeholder="0.00"></div>
+        </div>
+        <div class="fila-doble">
+            <div><label>Stock Actual</label><input type="number" id="p_stock_actual" min="0" step="1" placeholder="0"></div>
+            <div><label>Stock Mínimo</label><input type="number" id="p_stock_minimo" min="0" step="1" value="5"></div>
+        </div>
+        <button id="btn-guardar-producto" onclick="registrarProducto()">Guardar Producto</button>
+        <button class="secundario" onclick="cerrarModal('modal-producto')">Cancelar</button>
+        <div id="msg-producto" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- Modal Editar Producto -->
+<div id="modal-editar-producto" class="modal-fondo">
+    <div class="modal-contenido">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-editar-producto')">×</button>
+        <h2>Editar Producto</h2>
+        <div style="background: var(--bg-secundario); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--borde);">
+            <div style="font-size: 11px; color: var(--texto-suave);">ID: <span id="edit-prod-id" style="font-weight: 700; color: var(--morado-claro);">-</span></div>
+            <div style="font-size: 11px; color: var(--texto-suave); margin-top: 4px;">SKU: <span id="edit-prod-sku" style="font-weight: 700; color: var(--morado-claro);">-</span></div>
+        </div>
+        <label>Nombre *</label><input type="text" id="edit_p_nombre">
+        <label>Descripción</label><textarea id="edit_p_descripcion"></textarea>
+        <label>Categoría *</label><select id="edit_p_categoria"></select>
+        <div class="fila-doble">
+            <div><label>Precio Costo *</label><input type="number" id="edit_p_precio_costo" step="0.01" min="0"></div>
+            <div><label>Precio Venta *</label><input type="number" id="edit_p_precio_venta" step="0.01" min="0"></div>
+        </div>
+        <div class="fila-doble">
+            <div><label>Stock Actual</label><input type="number" id="edit_p_stock_actual" min="0" step="1"></div>
+            <div><label>Stock Mínimo</label><input type="number" id="edit_p_stock_minimo" min="0" step="1"></div>
+        </div>
+        <button id="btn-guardar-edicion-producto" onclick="guardarEdicionProducto()">Guardar Cambios</button>
+        <button class="secundario" onclick="cerrarModal('modal-editar-producto')">Cancelar</button>
+        <div id="msg-editar-producto" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- Modal Editar Stock -->
+<div id="modal-editar-stock" class="modal-fondo">
+    <div class="modal-contenido">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-editar-stock')">×</button>
+        <h2>Editar Stock</h2>
+        <div style="background: var(--bg-secundario); padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--borde);">
+            <div style="font-size: 16px; font-weight: 700; color: var(--texto); margin-bottom: 5px;" id="edit-stock-nombre">Producto</div>
+            <div style="font-size: 12px; color: var(--texto-suave);">SKU: <span id="edit-stock-sku">-</span></div>
+            <div style="font-size: 12px; color: var(--texto-suave); margin-top: 5px;">Stock actual: <span id="edit-stock-actual" style="font-weight: 700; color: var(--morado-claro);">0</span></div>
+        </div>
+        <label>Nuevo Stock *</label>
+        <input type="number" id="edit-stock-nuevo" min="0" step="1" placeholder="Introduce el nuevo stock">
+        <button id="btn-guardar-stock" onclick="guardarStock()">Guardar Cambios</button>
+        <button class="secundario" onclick="cerrarModal('modal-editar-stock')">Cancelar</button>
+        <div id="msg-editar-stock" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- Modal Cliente -->
+<div id="modal-cliente" class="modal-fondo">
+    <div class="modal-contenido">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-cliente')">×</button>
+        <h2>Registrar Cliente</h2>
+        <label>Nombre *</label><input type="text" id="c_nombre">
+        <label>Apellido *</label><input type="text" id="c_apellido">
+        <label>Teléfono</label><input type="text" id="c_telefono">
+        <label>Email</label><input type="email" id="c_email">
+        <label>Dirección</label><input type="text" id="c_direccion">
+        <button id="btn-guardar-cliente" onclick="registrarCliente()">Guardar Cliente</button>
+        <button class="secundario" onclick="cerrarModal('modal-cliente')">Cancelar</button>
+        <div id="msg-cliente" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- Modal Proveedor -->
+<div id="modal-proveedor" class="modal-fondo">
+    <div class="modal-contenido">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-proveedor')">×</button>
+        <h2>Registrar Proveedor</h2>
+        <label>Nombre de la Empresa *</label><input type="text" id="pr_empresa">
+        <label>Teléfono</label><input type="text" id="pr_telefono">
+        <label>Email</label><input type="email" id="pr_email">
+        <label>Dirección / País</label><input type="text" id="pr_direccion">
+        <button id="btn-guardar-proveedor" onclick="registrarProveedor()">Guardar Proveedor</button>
+        <button class="secundario" onclick="cerrarModal('modal-proveedor')">Cancelar</button>
+        <div id="msg-proveedor" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- Modal Pedido -->
+<div id="modal-pedido" class="modal-fondo">
+    <div class="modal-contenido ancho">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-pedido')">×</button>
+        <h2>Registrar Nuevo Pedido</h2>
+        <div class="fila-doble">
+            <div><label>Cliente *</label><select id="ped_cliente"></select></div>
+            <div><label>Repartidor (opcional)</label><select id="ped_repartidor"></select></div>
+        </div>
+        <div class="fila-doble">
+            <div><label>Método de Pago</label>
+                <select id="ped_metodo_pago">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="QR">QR</option>
+                </select>
+            </div>
+            <div><label>Costo Delivery (Bs)</label><input type="number" id="ped_costo_delivery" value="0" step="0.01" min="0"></div>
+        </div>
+        
+        <!-- NUEVO: SUBIR COMPROBANTE -->
+        <label>Subir Comprobante de Pago (Foto QR, Recibo, etc)</label>
+        <input type="file" id="ped_foto" accept="image/*">
+
+        <h2 style="margin-top:24px;">Detalle</h2>
+        <div class="detalle-pedido" id="detalle-pedido"></div>
+        <button class="secundario" onclick="agregarItemPedido()">+ Agregar Producto</button>
+        <div class="total-pedido" id="total-pedido">Subtotal: Bs 0.00 | Total: Bs 0.00</div>
+        <button id="btn-guardar-pedido" onclick="registrarPedido()">Guardar Pedido</button>
+        <button class="secundario" onclick="cerrarModal('modal-pedido')">Cancelar</button>
+        <div id="msg-pedido" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- Modal Detalle Pedido -->
+<div id="modal-detalle-pedido" class="modal-fondo">
+    <div class="modal-contenido ancho">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-detalle-pedido')">×</button>
+        <h2 id="detalle-pedido-titulo">Detalle del Pedido</h2>
+        <div id="detalle-pedido-contenido"></div>
+    </div>
+</div>
+
+<!-- Modal Importación -->
+<div id="modal-importacion" class="modal-fondo">
+    <div class="modal-contenido">
+        <button class="modal-cerrar" onclick="cerrarModal('modal-importacion')">×</button>
+        <h2>Registrar Importación</h2>
+        <label>Proveedor *</label><select id="imp_proveedor"></select>
+        <label>Fecha *</label><input type="date" id="imp_fecha">
+        <label>Costo Envío (Bs)</label><input type="number" id="imp_costo_envio" step="0.01" min="0" value="0">
+        <label>Impuestos (Bs)</label><input type="number" id="imp_impuestos" step="0.01" min="0" value="0">
+        
+        <!-- NUEVO: SUBIR RECIBO -->
+        <label>Subir Recibo/Factura (Foto)</label>
+        <input type="file" id="imp_foto" accept="image/*">
+
+        <button id="btn-guardar-importacion" onclick="registrarImportacion()">Guardar Importación</button>
+        <button class="secundario" onclick="cerrarModal('modal-importacion')">Cancelar</button>
+        <div id="msg-importacion" class="mensaje"></div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
 <!-- JAVASCRIPT -->
 <!-- ============================================================ -->
 <script>
-// ⚠️ CAMBIA ESTOS DOS VALORES POR TUS LLAVES DE SUPABASE ⚠️
-const SUPABASE_URL = 'https://kdlvljxjurjcrfaekwzg.supabase.co'; 
+// ⚠️ CONFIGURACIÓN DE SUPABASE
+const SUPABASE_URL = 'https://kdlvljxjurjcrfaekwzg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkbHZsanhqdXJqY3JmYWVrd3pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3MjI2MTEsImV4cCI6MjEwODI5ODYxMX0.2EMj-OeHT8lKpPPGbzMfbJqmqarh6OSwsX9bTrCxPo8';
 
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Variables globales
+let productoEditando = null;
+let productoEditandoCompleto = null;
+let itemsPedido = [];
+let pedidosCache = [];
+let productosCache = [];
+let clientesCache = [];
+let proveedoresCache = [];
+
 // ==========================================
-// AUTENTICACIÓN (LOGIN)
+// UTILIDADES
+// ==========================================
+function formatearBs(n) { return 'Bs ' + Number(n || 0).toFixed(2); }
+
+function formatearFecha(fecha) {
+    if (!fecha) return '-';
+    const d = new Date(fecha);
+    if (isNaN(d.getTime())) return fecha;
+    return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function mostrarMensaje(id, texto, esOk = true) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = texto;
+    el.className = 'mensaje ' + (esOk ? 'ok' : 'error');
+    setTimeout(() => { el.className = 'mensaje'; }, 5000);
+}
+
+function badgeEstado(estado) {
+    const map = {
+        'Pendiente': 'amarillo',
+        'Preparando': 'naranja',
+        'En camino': 'azul',
+        'Entregado': 'verde',
+        'Cancelado': 'rojo'
+    };
+    return map[estado] || 'gris';
+}
+
+function badgeStock(stock, stockMinimo) {
+    if (stock === 0) return '<span class="badge rojo">Agotado</span>';
+    if (stock < stockMinimo) return '<span class="badge amarillo">Stock Bajo</span>';
+    return '<span class="badge verde">OK</span>';
+}
+
+function deshabilitarBoton(id, deshabilitar = true) {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = deshabilitar;
+}
+
+// ==========================================
+// AUTENTICACIÓN
 // ==========================================
 async function verificarSesion() {
     const { data: { session } } = await db.auth.getSession();
@@ -470,33 +787,25 @@ async function iniciarSesion() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const msg = document.getElementById('msg-login');
-
     if (!email || !password) { msg.textContent = 'Llena todos los campos'; msg.className = 'mensaje error'; return; }
 
+    deshabilitarBoton('btn-login', true);
     const { error } = await db.auth.signInWithPassword({ email, password });
+    deshabilitarBoton('btn-login', false);
 
-    if (error) {
-        msg.textContent = 'Error: ' + error.message; msg.className = 'mensaje error';
-    } else {
-        msg.textContent = '¡Bienvenido!'; msg.className = 'mensaje ok';
-        setTimeout(() => verificarSesion(), 800);
-    }
+    if (error) { msg.textContent = 'Error: ' + error.message; msg.className = 'mensaje error'; }
+    else { msg.textContent = '¡Bienvenido!'; msg.className = 'mensaje ok'; setTimeout(() => verificarSesion(), 800); }
 }
 
 async function registrarUsuario() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     const msg = document.getElementById('msg-login');
-
     if (!email || !password) { msg.textContent = 'Llena todos los campos'; msg.className = 'mensaje error'; return; }
 
     const { error } = await db.auth.signUp({ email, password });
-
-    if (error) {
-        msg.textContent = 'Error: ' + error.message; msg.className = 'mensaje error';
-    } else {
-        msg.textContent = 'Usuario creado. Ya puedes iniciar sesión.'; msg.className = 'mensaje ok';
-    }
+    if (error) { msg.textContent = 'Error: ' + error.message; msg.className = 'mensaje error'; }
+    else { msg.textContent = 'Usuario creado. Ya puedes iniciar sesión.'; msg.className = 'mensaje ok'; }
 }
 
 async function cerrarSesion() {
@@ -505,7 +814,7 @@ async function cerrarSesion() {
 }
 
 // ==========================================
-// NAVEGACIÓN
+// NAVEGACIÓN Y MODALES
 // ==========================================
 function cambiarTab(id, el) {
     document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
@@ -521,54 +830,123 @@ function cambiarTab(id, el) {
     if (id === 'dashboard') cargarDashboard();
 }
 
-function mostrarMensaje(id, texto, esOk = true) {
-    const el = document.getElementById(id);
-    el.textContent = texto;
-    el.className = 'mensaje ' + (esOk ? 'ok' : 'error');
-    setTimeout(() => { el.className = 'mensaje'; }, 4500);
+function abrirModal(id) {
+    document.getElementById(id).classList.add('activo');
+    const msg = document.querySelector(`#${id} .mensaje`);
+    if (msg) msg.className = 'mensaje';
+
+    // Limpiar campos de texto y números
+    document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(input => {
+        if (input.type === 'file') input.value = ''; // Limpiar archivos
+        else if (input.type === 'number') input.value = (input.id === 'p_stock_minimo' || input.id === 'ped_costo_delivery' || input.id === 'imp_costo_envio' || input.id === 'imp_impuestos') ? input.defaultValue : '';
+        else if (input.type === 'date') input.value = '';
+        else input.value = '';
+    });
+
+    document.querySelectorAll(`#${id} select`).forEach(select => {
+        if (select.id !== 'ped_metodo_pago') select.selectedIndex = 0;
+    });
+
+    if (id === 'modal-pedido') {
+        itemsPedido = [];
+        document.getElementById('detalle-pedido').innerHTML = '';
+        recalcularTotal();
+    }
 }
-function formatearBs(n) { return 'Bs ' + Number(n || 0).toFixed(2); }
+
+function cerrarModal(id) {
+    document.getElementById(id).classList.remove('activo');
+}
 
 // ==========================================
-// FUNCIONES DE LA APP
+// INICIO
 // ==========================================
 function iniciarApp() {
     cargarDashboard();
     cargarCategorias();
 }
 
+// ==========================================
+// DASHBOARD
+// ==========================================
 async function cargarDashboard() {
-    const { count: productos } = await db.from('productos').select('*', { count: 'exact', head: true });
-    const { count: clientes } = await db.from('clientes').select('*', { count: 'exact', head: true });
-    const { count: pedidos } = await db.from('pedidos').select('*', { count: 'exact', head: true });
-    
-    const { data: stockBajo } = await db.from('productos').select('*').filter('stock', 'lte', 'stock_minimo');
-    const { data: ventasData } = await db.from('pedidos').select('total').neq('estado', 'Cancelado');
-    const ventas = (ventasData || []).reduce((s, p) => s + Number(p.total), 0);
+    try {
+        const [productos, clientes, pedidos, pendientes, entregados, ventasData] = await Promise.all([
+            db.from('productos').select('*', { count: 'exact', head: true }),
+            db.from('clientes').select('*', { count: 'exact', head: true }),
+            db.from('pedidos').select('*', { count: 'exact', head: true }),
+            db.from('pedidos').select('*', { count: 'exact', head: true }).eq('estado', 'Pendiente'),
+            db.from('pedidos').select('*', { count: 'exact', head: true }).eq('estado', 'Entregado'),
+            db.from('pedidos').select('total').neq('estado', 'Cancelado')
+        ]);
 
-    document.getElementById('stat-productos').textContent = productos || 0;
-    document.getElementById('stat-clientes').textContent = clientes || 0;
-    document.getElementById('stat-pedidos').textContent = pedidos || 0;
-    document.getElementById('stat-stock-bajo').textContent = (stockBajo || []).length;
-    document.getElementById('stat-ventas').textContent = formatearBs(ventas);
+        const ventas = (ventasData.data || []).reduce((s, p) => s + Number(p.total), 0);
 
-    const { data: ultProductos } = await db.from('productos').select('*, categorias(nombre)').order('id_producto', { ascending: false }).limit(5);
-    const tp = document.querySelector('#tabla-dash-productos tbody');
-    tp.innerHTML = '';
-    (ultProductos || []).forEach(p => {
-        tp.innerHTML += `<tr><td>P-${String(p.id_producto).padStart(3,'0')}</td><td>${p.nombre}</td>
-            <td>${p.categorias?.nombre || '-'}</td><td>${p.stock}</td><td>${formatearBs(p.precio_venta)}</td></tr>`;
-    });
+        document.getElementById('stat-productos').textContent = productos.count || 0;
+        document.getElementById('stat-clientes').textContent = clientes.count || 0;
+        document.getElementById('stat-pedidos').textContent = pedidos.count || 0;
+        document.getElementById('stat-pendientes').textContent = pendientes.count || 0;
+        document.getElementById('stat-entregados').textContent = entregados.count || 0;
+        document.getElementById('stat-ventas').textContent = formatearBs(ventas);
+
+        const { data: pedidosRecientes } = await db.from('pedidos')
+            .select('*, clientes(nombre, apellido)')
+            .order('id_pedido', { ascending: false })
+            .limit(5);
+
+        const tp = document.querySelector('#tabla-dash-pedidos tbody');
+        tp.innerHTML = '';
+        (pedidosRecientes || []).forEach(p => {
+            tp.innerHTML += `<tr>
+                <td>#${String(p.id_pedido).padStart(3,'0')}</td>
+                <td>${p.clientes?.nombre || '-'} ${p.clientes?.apellido || ''}</td>
+                <td>${formatearFecha(p.fecha)}</td>
+                <td>${formatearBs(p.total)}</td>
+                <td><span class="badge ${badgeEstado(p.estado)}">${p.estado}</span></td>
+            </tr>`;
+        });
+
+        const { data: ultProductos } = await db.from('productos')
+            .select('*, categorias(nombre)')
+            .order('id_producto', { ascending: false })
+            .limit(5);
+
+        const tpProd = document.querySelector('#tabla-dash-productos tbody');
+        tpProd.innerHTML = '';
+        (ultProductos || []).forEach(p => {
+            tpProd.innerHTML += `<tr>
+                <td>P-${String(p.id_producto).padStart(3,'0')}</td>
+                <td>${p.nombre}</td>
+                <td>${p.categorias?.nombre || '-'}</td>
+                <td>${p.stock}</td>
+                <td>${formatearBs(p.precio_venta)}</td>
+            </tr>`;
+        });
+    } catch (e) {
+        console.error('Error dashboard:', e);
+    }
 }
 
+// ==========================================
+// CATEGORÍAS
+// ==========================================
 async function cargarCategorias() {
-    const { data } = await db.from('categorias').select('*');
-    const sel = document.getElementById('p_categoria');
-    sel.innerHTML = '<option value="">-- Seleccione --</option>';
-    (data || []).forEach(c => { sel.innerHTML += `<option value="${c.id_categoria}">${c.nombre}</option>`; });
+    try {
+        const { data } = await db.from('categorias').select('*').order('nombre');
+        const sel = document.getElementById('p_categoria');
+        const selEdit = document.getElementById('edit_p_categoria');
+        const options = '<option value="">-- Seleccione --</option>' +
+            (data || []).map(c => `<option value="${c.id_categoria}">${c.nombre}</option>`).join('');
+        if (sel) sel.innerHTML = options;
+        if (selEdit) selEdit.innerHTML = options;
+    } catch (e) {
+        console.error('Error categorías:', e);
+    }
 }
 
+// ==========================================
 // PRODUCTOS
+// ==========================================
 async function registrarProducto() {
     const datos = {
         id_categoria: parseInt(document.getElementById('p_categoria').value) || null,
@@ -579,29 +957,205 @@ async function registrarProducto() {
         stock: parseInt(document.getElementById('p_stock_actual').value) || 0,
         stock_minimo: parseInt(document.getElementById('p_stock_minimo').value) || 5
     };
-    if (!datos.nombre || !datos.id_categoria || !datos.precio_venta) {
-        mostrarMensaje('msg-producto', 'Complete los campos obligatorios', false); return;
-    }
+
+    if (!datos.nombre) { mostrarMensaje('msg-producto', 'El nombre es obligatorio', false); return; }
+    if (!datos.id_categoria) { mostrarMensaje('msg-producto', 'Selecciona una categoría', false); return; }
+    if (isNaN(datos.precio_compra) || datos.precio_compra < 0) { mostrarMensaje('msg-producto', 'El precio de costo debe ser ≥ 0', false); return; }
+    if (isNaN(datos.precio_venta) || datos.precio_venta < 0) { mostrarMensaje('msg-producto', 'El precio de venta debe ser ≥ 0', false); return; }
+    if (isNaN(datos.stock) || datos.stock < 0 || !Number.isInteger(datos.stock)) { mostrarMensaje('msg-producto', 'El stock debe ser un entero ≥ 0', false); return; }
+    if (isNaN(datos.stock_minimo) || datos.stock_minimo < 0 || !Number.isInteger(datos.stock_minimo)) { mostrarMensaje('msg-producto', 'El stock mínimo debe ser un entero ≥ 0', false); return; }
+
+    deshabilitarBoton('btn-guardar-producto', true);
     const { error } = await db.from('productos').insert([datos]);
+    deshabilitarBoton('btn-guardar-producto', false);
+
     if (error) { mostrarMensaje('msg-producto', 'Error: ' + error.message, false); return; }
-    mostrarMensaje('msg-producto', 'Producto registrado', true);
+    mostrarMensaje('msg-producto', 'Producto registrado correctamente', true);
     cargarProductos();
+    cargarDashboard();
+    setTimeout(() => cerrarModal('modal-producto'), 1000);
 }
 
 async function cargarProductos() {
-    const { data } = await db.from('productos').select('*, categorias(nombre)').eq('estado', true).order('id_producto', { ascending: false });
+    try {
+        const { data, error } = await db.from('productos')
+            .select('*, categorias(nombre)')
+            .eq('estado', true)
+            .order('id_producto', { ascending: false });
+
+        if (error) throw error;
+        productosCache = data || [];
+        renderizarProductos(productosCache);
+    } catch (e) {
+        console.error('Error productos:', e);
+        document.querySelector('#tabla-productos tbody').innerHTML =
+            '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--error);">Error al cargar productos</td></tr>';
+    }
+}
+
+function renderizarProductos(productos) {
     const tbody = document.querySelector('#tabla-productos tbody');
     tbody.innerHTML = '';
-    (data || []).forEach(p => {
-        const badge = p.stock < p.stock_minimo ? '<span class="badge rojo">Stock Bajo</span>' : '<span class="badge verde">OK</span>';
-        tbody.innerHTML += `<tr><td>${p.id_producto}</td><td>P-${String(p.id_producto).padStart(3,'0')}</td>
-            <td>${p.nombre}</td><td>${p.categorias?.nombre || '-'}</td>
-            <td>${formatearBs(p.precio_compra)}</td><td>${formatearBs(p.precio_venta)}</td>
-            <td>${p.stock}</td><td>${badge}</td></tr>`;
+    if (!productos || productos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:20px; color:var(--texto-tenue);">No hay productos</td></tr>';
+        return;
+    }
+    productos.forEach(p => {
+        tbody.innerHTML += `<tr>
+            <td>${p.id_producto}</td>
+            <td>P-${String(p.id_producto).padStart(3,'0')}</td>
+            <td>${p.nombre}</td>
+            <td>${p.categorias?.nombre || '-'}</td>
+            <td>${formatearBs(p.precio_compra)}</td>
+            <td>${formatearBs(p.precio_venta)}</td>
+            <td>${p.stock}</td>
+            <td>${badgeStock(p.stock, p.stock_minimo)}</td>
+            <td style="white-space:nowrap;">
+                <button onclick="abrirEditarProducto(${p.id_producto})" style="width:auto; padding:6px 10px; font-size:11px; margin:0 2px; background:var(--info);">Editar</button>
+                <button onclick="abrirEditarStock(${p.id_producto})" style="width:auto; padding:6px 10px; font-size:11px; margin:0 2px; background:var(--morado);">Stock</button>
+            </td>
+        </tr>`;
     });
 }
 
+function filtrarProductos() {
+    const texto = document.getElementById('filtro-buscar-producto').value.toLowerCase();
+    const estado = document.getElementById('filtro-estado-producto').value;
+    const filtrados = productosCache.filter(p => {
+        const coincideTexto = !texto ||
+            p.nombre.toLowerCase().includes(texto) ||
+            String(p.id_producto).includes(texto);
+        let coincideEstado = true;
+        if (estado === 'agotado') coincideEstado = p.stock === 0;
+        else if (estado === 'bajo') coincideEstado = p.stock > 0 && p.stock < p.stock_minimo;
+        else if (estado === 'OK') coincideEstado = p.stock >= p.stock_minimo;
+        return coincideTexto && coincideEstado;
+    });
+    renderizarProductos(filtrados);
+}
+
+function limpiarFiltrosProductos() {
+    document.getElementById('filtro-buscar-producto').value = '';
+    document.getElementById('filtro-estado-producto').value = '';
+    renderizarProductos(productosCache);
+}
+
+// --- EDITAR PRODUCTO COMPLETO ---
+async function abrirEditarProducto(idProducto) {
+    try {
+        const { data: producto, error } = await db.from('productos')
+            .select('*, categorias(nombre)')
+            .eq('id_producto', idProducto)
+            .single();
+        if (error || !producto) { alert('Error al cargar producto'); return; }
+
+        productoEditandoCompleto = producto;
+
+        const { data: categorias } = await db.from('categorias').select('*').order('nombre');
+        const selCat = document.getElementById('edit_p_categoria');
+        selCat.innerHTML = '<option value="">-- Seleccione --</option>' +
+            (categorias || []).map(c =>
+                `<option value="${c.id_categoria}" ${producto.id_categoria === c.id_categoria ? 'selected' : ''}>${c.nombre}</option>`
+            ).join('');
+
+        document.getElementById('edit-prod-id').textContent = producto.id_producto;
+        document.getElementById('edit-prod-sku').textContent = 'P-' + String(producto.id_producto).padStart(3,'0');
+        document.getElementById('edit_p_nombre').value = producto.nombre || '';
+        document.getElementById('edit_p_descripcion').value = producto.descripcion || '';
+        document.getElementById('edit_p_precio_costo').value = producto.precio_compra || 0;
+        document.getElementById('edit_p_precio_venta').value = producto.precio_venta || 0;
+        document.getElementById('edit_p_stock_actual').value = producto.stock || 0;
+        document.getElementById('edit_p_stock_minimo').value = producto.stock_minimo || 5;
+
+        document.getElementById('msg-editar-producto').className = 'mensaje';
+        document.getElementById('modal-editar-producto').classList.add('activo');
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+async function guardarEdicionProducto() {
+    if (!productoEditandoCompleto) return;
+
+    const nombre = document.getElementById('edit_p_nombre').value.trim();
+    const descripcion = document.getElementById('edit_p_descripcion').value.trim();
+    const idCategoria = parseInt(document.getElementById('edit_p_categoria').value) || null;
+    const precioCosto = parseFloat(document.getElementById('edit_p_precio_costo').value);
+    const precioVenta = parseFloat(document.getElementById('edit_p_precio_venta').value);
+    const stock = parseInt(document.getElementById('edit_p_stock_actual').value);
+    const stockMinimo = parseInt(document.getElementById('edit_p_stock_minimo').value);
+
+    if (!nombre) { mostrarMensaje('msg-editar-producto', 'El nombre es obligatorio', false); return; }
+    if (!idCategoria) { mostrarMensaje('msg-editar-producto', 'Selecciona una categoría', false); return; }
+    if (isNaN(precioCosto) || precioCosto < 0) { mostrarMensaje('msg-editar-producto', 'Precio de costo inválido', false); return; }
+    if (isNaN(precioVenta) || precioVenta < 0) { mostrarMensaje('msg-editar-producto', 'Precio de venta inválido', false); return; }
+    if (isNaN(stock) || stock < 0 || !Number.isInteger(stock)) { mostrarMensaje('msg-editar-producto', 'Stock inválido', false); return; }
+    if (isNaN(stockMinimo) || stockMinimo < 0 || !Number.isInteger(stockMinimo)) { mostrarMensaje('msg-editar-producto', 'Stock mínimo inválido', false); return; }
+
+    const datos = {
+        nombre, descripcion,
+        id_categoria: idCategoria,
+        precio_compra: precioCosto,
+        precio_venta: precioVenta,
+        stock,
+        stock_minimo: stockMinimo
+    };
+
+    deshabilitarBoton('btn-guardar-edicion-producto', true);
+    const { error } = await db.from('productos').update(datos).eq('id_producto', productoEditandoCompleto.id_producto);
+    deshabilitarBoton('btn-guardar-edicion-producto', false);
+
+    if (error) { mostrarMensaje('msg-editar-producto', 'Error: ' + error.message, false); return; }
+    mostrarMensaje('msg-editar-producto', 'Producto actualizado', true);
+    cargarProductos();
+    cargarDashboard();
+    setTimeout(() => cerrarModal('modal-editar-producto'), 1000);
+    productoEditandoCompleto = null;
+}
+
+// --- EDITAR STOCK ---
+function abrirEditarStock(idProducto) {
+    const p = productosCache.find(x => x.id_producto === idProducto);
+    if (!p) return;
+    productoEditando = { id_producto: idProducto, stock_actual: p.stock };
+    document.getElementById('edit-stock-nombre').textContent = p.nombre;
+    document.getElementById('edit-stock-sku').textContent = 'P-' + String(idProducto).padStart(3,'0');
+    document.getElementById('edit-stock-actual').textContent = p.stock;
+    document.getElementById('edit-stock-nuevo').value = p.stock;
+    document.getElementById('msg-editar-stock').className = 'mensaje';
+    document.getElementById('modal-editar-stock').classList.add('activo');
+    setTimeout(() => {
+        const input = document.getElementById('edit-stock-nuevo');
+        input.focus();
+        input.select();
+    }, 100);
+}
+
+async function guardarStock() {
+    const val = document.getElementById('edit-stock-nuevo').value;
+    if (val === '') { mostrarMensaje('msg-editar-stock', 'Introduce un valor', false); return; }
+    const stockNum = Number(val);
+    if (!Number.isInteger(stockNum) || stockNum < 0) {
+        mostrarMensaje('msg-editar-stock', 'Debe ser entero ≥ 0', false); return;
+    }
+    if (stockNum === productoEditando.stock_actual) {
+        mostrarMensaje('msg-editar-stock', 'El stock no ha cambiado', false); return;
+    }
+
+    deshabilitarBoton('btn-guardar-stock', true);
+    const { error } = await db.from('productos').update({ stock: stockNum }).eq('id_producto', productoEditando.id_producto);
+    deshabilitarBoton('btn-guardar-stock', false);
+
+    if (error) { mostrarMensaje('msg-editar-stock', 'Error: ' + error.message, false); return; }
+    mostrarMensaje('msg-editar-stock', 'Stock actualizado', true);
+    cargarProductos();
+    cargarDashboard();
+    setTimeout(() => cerrarModal('modal-editar-stock'), 1000);
+}
+
+// ==========================================
 // CLIENTES
+// ==========================================
 async function registrarCliente() {
     const datos = {
         nombre: document.getElementById('c_nombre').value.trim(),
@@ -610,30 +1164,73 @@ async function registrarCliente() {
         correo: document.getElementById('c_email').value.trim(),
         direccion: document.getElementById('c_direccion').value.trim()
     };
+    if (!datos.nombre || !datos.apellido) { mostrarMensaje('msg-cliente', 'Nombre y apellido obligatorios', false); return; }
+
+    deshabilitarBoton('btn-guardar-cliente', true);
     const { error } = await db.from('clientes').insert([datos]);
+    deshabilitarBoton('btn-guardar-cliente', false);
+
     if (error) { mostrarMensaje('msg-cliente', 'Error: ' + error.message, false); return; }
     mostrarMensaje('msg-cliente', 'Cliente registrado', true);
     cargarClientes();
+    setTimeout(() => cerrarModal('modal-cliente'), 1000);
 }
 
 async function cargarClientes() {
-    const { data } = await db.from('clientes').select('*').order('id_cliente', { ascending: false });
+    try {
+        const { data } = await db.from('clientes').select('*').order('id_cliente', { ascending: false });
+        clientesCache = data || [];
+        renderizarClientes(clientesCache);
+    } catch (e) {
+        console.error('Error clientes:', e);
+    }
+}
+
+function renderizarClientes(clientes) {
     const tbody = document.querySelector('#tabla-clientes tbody');
     tbody.innerHTML = '';
-    (data || []).forEach(c => {
-        tbody.innerHTML += `<tr><td>${c.id_cliente}</td><td>${c.nombre}</td><td>${c.apellido}</td>
-            <td>${c.telefono}</td><td>${c.correo || '-'}</td><td>${c.direccion || '-'}</td></tr>`;
+    if (!clientes || clientes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--texto-tenue);">No hay clientes</td></tr>';
+        return;
+    }
+    clientes.forEach(c => {
+        tbody.innerHTML += `<tr>
+            <td>${c.id_cliente}</td>
+            <td>${c.nombre}</td>
+            <td>${c.apellido || '-'}</td>
+            <td>${c.telefono || '-'}</td>
+            <td>${c.correo || '-'}</td>
+            <td>${c.direccion || '-'}</td>
+        </tr>`;
     });
 }
 
-async function cargarClientesSelect() {
-    const { data } = await db.from('clientes').select('*');
-    const sel = document.getElementById('ped_cliente');
-    sel.innerHTML = '<option value="">-- Seleccione Cliente --</option>';
-    (data || []).forEach(c => { sel.innerHTML += `<option value="${c.id_cliente}">${c.nombre} ${c.apellido}</option>`; });
+function filtrarClientes() {
+    const texto = document.getElementById('filtro-buscar-cliente').value.toLowerCase();
+    const filtrados = clientesCache.filter(c => {
+        return !texto ||
+            `${c.nombre} ${c.apellido || ''}`.toLowerCase().includes(texto) ||
+            (c.correo || '').toLowerCase().includes(texto) ||
+            (c.telefono || '').includes(texto);
+    });
+    renderizarClientes(filtrados);
 }
 
+function limpiarFiltrosClientes() {
+    document.getElementById('filtro-buscar-cliente').value = '';
+    renderizarClientes(clientesCache);
+}
+
+async function cargarClientesSelect() {
+    const { data } = await db.from('clientes').select('*').order('nombre');
+    const sel = document.getElementById('ped_cliente');
+    sel.innerHTML = '<option value="">-- Seleccione Cliente --</option>' +
+        (data || []).map(c => `<option value="${c.id_cliente}">${c.nombre} ${c.apellido || ''}</option>`).join('');
+}
+
+// ==========================================
 // PROVEEDORES
+// ==========================================
 async function registrarProveedor() {
     const datos = {
         nombre: document.getElementById('pr_empresa').value.trim(),
@@ -641,88 +1238,160 @@ async function registrarProveedor() {
         correo: document.getElementById('pr_email').value.trim(),
         direccion: document.getElementById('pr_direccion').value.trim()
     };
+    if (!datos.nombre) { mostrarMensaje('msg-proveedor', 'El nombre es obligatorio', false); return; }
+
+    deshabilitarBoton('btn-guardar-proveedor', true);
     const { error } = await db.from('proveedores').insert([datos]);
+    deshabilitarBoton('btn-guardar-proveedor', false);
+
     if (error) { mostrarMensaje('msg-proveedor', 'Error: ' + error.message, false); return; }
     mostrarMensaje('msg-proveedor', 'Proveedor registrado', true);
     cargarProveedores();
+    setTimeout(() => cerrarModal('modal-proveedor'), 1000);
 }
 
 async function cargarProveedores() {
-    const { data } = await db.from('proveedores').select('*').order('id_proveedor', { ascending: false });
+    try {
+        const { data } = await db.from('proveedores').select('*').order('id_proveedor', { ascending: false });
+        proveedoresCache = data || [];
+        renderizarProveedores(proveedoresCache);
+    } catch (e) {
+        console.error('Error proveedores:', e);
+    }
+}
+
+function renderizarProveedores(proveedores) {
     const tbody = document.querySelector('#tabla-proveedores tbody');
     tbody.innerHTML = '';
-    (data || []).forEach(p => {
-        tbody.innerHTML += `<tr><td>${p.id_proveedor}</td><td>${p.nombre}</td>
-            <td>${p.telefono || '-'}</td><td>${p.correo || '-'}</td><td>${p.direccion || '-'}</td></tr>`;
+    if (!proveedores || proveedores.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--texto-tenue);">No hay proveedores</td></tr>';
+        return;
+    }
+    proveedores.forEach(p => {
+        tbody.innerHTML += `<tr>
+            <td>${p.id_proveedor}</td>
+            <td>${p.nombre}</td>
+            <td>${p.telefono || '-'}</td>
+            <td>${p.correo || '-'}</td>
+            <td>${p.direccion || '-'}</td>
+        </tr>`;
     });
 }
 
+function filtrarProveedores() {
+    const texto = document.getElementById('filtro-buscar-proveedor').value.toLowerCase();
+    const filtrados = proveedoresCache.filter(p =>
+        !texto || p.nombre.toLowerCase().includes(texto) ||
+        (p.correo || '').toLowerCase().includes(texto)
+    );
+    renderizarProveedores(filtrados);
+}
+
+function limpiarFiltrosProveedores() {
+    document.getElementById('filtro-buscar-proveedor').value = '';
+    renderizarProveedores(proveedoresCache);
+}
+
 async function cargarProveedoresSelect() {
-    const { data } = await db.from('proveedores').select('*');
+    const { data } = await db.from('proveedores').select('*').eq('estado', true).order('nombre');
     const sel = document.getElementById('imp_proveedor');
-    sel.innerHTML = '<option value="">-- Seleccione Proveedor --</option>';
-    (data || []).forEach(p => { sel.innerHTML += `<option value="${p.id_proveedor}">${p.nombre}</option>`; });
+    sel.innerHTML = '<option value="">-- Seleccione Proveedor --</option>' +
+        (data || []).map(p => `<option value="${p.id_proveedor}">${p.nombre}</option>`).join('');
 }
 
+// ==========================================
 // REPARTIDORES
+// ==========================================
 async function cargarRepartidoresSelect() {
-    const { data } = await db.from('repartidores').select('*').eq('estado', true);
+    const { data } = await db.from('repartidores').select('*').eq('estado', true).order('nombre');
     const sel = document.getElementById('ped_repartidor');
-    sel.innerHTML = '<option value="">-- Sin asignar --</option>';
-    (data || []).forEach(r => { sel.innerHTML += `<option value="${r.id_repartidor}">${r.nombre}</option>`; });
+    sel.innerHTML = '<option value="">-- Sin asignar --</option>' +
+        (data || []).map(r => `<option value="${r.id_repartidor}">${r.nombre}</option>`).join('');
 }
 
+// ==========================================
 // PEDIDOS
-let itemsPedido = [];
+// ==========================================
 async function agregarItemPedido() {
-    const { data: productos } = await db.from('productos').select('*').eq('estado', true);
-    const div = document.getElementById('detalle-pedido');
-    const index = itemsPedido.length;
-    const itemHTML = `
-        <div class="item" data-index="${index}">
-            <select onchange="cambiarProductoItem(${index}, this.value)">
-                <option value="">-- Producto --</option>
-                ${(productos || []).map(p => `<option value="${p.id_producto}" data-precio="${p.precio_venta}">${p.nombre} (${formatearBs(p.precio_venta)})</option>`).join('')}
-            </select>
-            <input type="number" placeholder="Cantidad" min="1" value="1" onchange="cambiarCantidadItem(${index}, this.value)">
-            <input type="text" placeholder="Precio" readonly value="0.00" id="precio-item-${index}">
-            <input type="text" placeholder="Subtotal" readonly value="0.00" id="subtotal-item-${index}">
-            <button onclick="eliminarItemPedido(${index})">X</button>
-        </div>`;
-    div.insertAdjacentHTML('beforeend', itemHTML);
-    itemsPedido.push({ producto_id: null, cantidad: 1, precio: 0, subtotal: 0 });
+    try {
+        const { data: productos } = await db.from('productos')
+            .select('*')
+            .eq('estado', true)
+            .gt('stock', 0)
+            .order('nombre');
+
+        if (!productos || productos.length === 0) {
+            alert('No hay productos con stock disponible');
+            return;
+        }
+
+        const div = document.getElementById('detalle-pedido');
+        const index = itemsPedido.length;
+        const itemHTML = `
+            <div class="item" data-index="${index}">
+                <select onchange="cambiarProductoItem(${index}, this.value)">
+                    <option value="">-- Producto --</option>
+                    ${productos.map(p => `<option value="${p.id_producto}" data-precio="${p.precio_venta}" data-stock="${p.stock}">${p.nombre} (${formatearBs(p.precio_venta)}) - Stock: ${p.stock}</option>`).join('')}
+                </select>
+                <input type="number" placeholder="Cant." min="1" value="1" onchange="cambiarCantidadItem(${index}, this.value)">
+                <input type="text" placeholder="Precio" readonly value="0.00" id="precio-item-${index}">
+                <input type="text" placeholder="Subtotal" readonly value="0.00" id="subtotal-item-${index}">
+                <button onclick="eliminarItemPedido(${index})">X</button>
+            </div>`;
+        div.insertAdjacentHTML('beforeend', itemHTML);
+        itemsPedido.push({ producto_id: null, cantidad: 1, precio: 0, subtotal: 0, stock: 0 });
+    } catch (e) {
+        console.error('Error agregar item:', e);
+    }
 }
 
 function cambiarProductoItem(index, producto_id) {
     const select = document.querySelector(`.item[data-index="${index}"] select`);
     const opt = select.options[select.selectedIndex];
     const precio = parseFloat(opt.dataset.precio || 0);
+    const stock = parseInt(opt.dataset.stock || 0);
     itemsPedido[index].producto_id = parseInt(producto_id) || null;
     itemsPedido[index].precio = precio;
+    itemsPedido[index].stock = stock;
     document.getElementById(`precio-item-${index}`).value = precio.toFixed(2);
     recalcularItem(index);
 }
+
 function cambiarCantidadItem(index, cantidad) {
-    itemsPedido[index].cantidad = parseInt(cantidad) || 1;
+    const cant = parseInt(cantidad) || 1;
+    const item = itemsPedido[index];
+    if (item.stock > 0 && cant > item.stock) {
+        alert(`Stock insuficiente. Máximo disponible: ${item.stock}`);
+        document.querySelector(`.item[data-index="${index}"] input[type="number"]`).value = item.stock;
+        itemsPedido[index].cantidad = item.stock;
+    } else {
+        itemsPedido[index].cantidad = cant;
+    }
     recalcularItem(index);
 }
+
 function recalcularItem(index) {
     const item = itemsPedido[index];
     item.subtotal = item.cantidad * item.precio;
     document.getElementById(`subtotal-item-${index}`).value = item.subtotal.toFixed(2);
     recalcularTotal();
 }
+
 function eliminarItemPedido(index) {
-    itemsPedido[index] = { producto_id: null, cantidad: 0, precio: 0, subtotal: 0 };
+    itemsPedido[index] = { producto_id: null, cantidad: 0, precio: 0, subtotal: 0, stock: 0 };
     document.querySelector(`.item[data-index="${index}"]`).remove();
     recalcularTotal();
 }
+
 function recalcularTotal() {
     const subtotal = itemsPedido.reduce((s, i) => s + i.subtotal, 0);
     const cd = parseFloat(document.getElementById('ped_costo_delivery').value) || 0;
     document.getElementById('total-pedido').textContent = `Subtotal: ${formatearBs(subtotal)} | Total: ${formatearBs(subtotal + cd)}`;
 }
-document.addEventListener('input', (e) => { if (e.target.id === 'ped_costo_delivery') recalcularTotal(); });
+
+document.addEventListener('input', (e) => {
+    if (e.target.id === 'ped_costo_delivery') recalcularTotal();
+});
 
 async function registrarPedido() {
     const cliente_id = parseInt(document.getElementById('ped_cliente').value);
@@ -730,82 +1399,364 @@ async function registrarPedido() {
     const metodo_pago = document.getElementById('ped_metodo_pago').value;
     const cd = parseFloat(document.getElementById('ped_costo_delivery').value) || 0;
     const itemsValidos = itemsPedido.filter(i => i.producto_id && i.cantidad > 0);
+    const fotoInput = document.getElementById('ped_foto');
 
-    if (!cliente_id || itemsValidos.length === 0) { mostrarMensaje('msg-pedido', 'Seleccione cliente y productos', false); return; }
+    if (!cliente_id) { mostrarMensaje('msg-pedido', 'Selecciona un cliente', false); return; }
+    if (itemsValidos.length === 0) { mostrarMensaje('msg-pedido', 'Añade al menos un producto', false); return; }
+
+    // Verificar stock actualizado
+    for (const item of itemsValidos) {
+        const { data: prod } = await db.from('productos').select('stock').eq('id_producto', item.producto_id).single();
+        if (!prod || prod.stock < item.cantidad) {
+            mostrarMensaje('msg-pedido', `Stock insuficiente para el producto seleccionado (disponible: ${prod?.stock || 0})`, false);
+            return;
+        }
+    }
 
     const subtotal = itemsValidos.reduce((s, i) => s + i.subtotal, 0);
     const total = subtotal + cd;
 
-    const { data: pedido, error: errPedido } = await db.from('pedidos').insert([{
-        id_cliente: cliente_id, id_repartidor: repartidor_id, total, metodo_pago, estado: 'Pendiente'
-    }]).select().single();
+    deshabilitarBoton('btn-guardar-pedido', true);
+    let urlComprobante = null;
 
-    if (errPedido) { mostrarMensaje('msg-pedido', 'Error: ' + errPedido.message, false); return; }
+    // 1. SUBIR IMAGEN SI EXISTE
+    if (fotoInput.files.length > 0) {
+        mostrarMensaje('msg-pedido', 'Subiendo comprobante...', true);
+        const file = fotoInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `pedido_${Date.now()}.${fileExt}`;
 
-    const detalles = itemsValidos.map(i => ({
-        id_pedido: pedido.id_pedido, id_producto: i.producto_id, cantidad: i.cantidad, precio_unitario: i.precio
-    }));
-    await db.from('detalle_pedido').insert(detalles);
+        const { data: uploadData, error: uploadError } = await db.storage
+            .from('comprobantes')
+            .upload(fileName, file);
 
-    for (const item of itemsValidos) {
-        const { data: prod } = await db.from('productos').select('stock').eq('id_producto', item.producto_id).single();
-        if (prod) await db.from('productos').update({ stock: prod.stock - item.cantidad }).eq('id_producto', item.producto_id);
+        if (uploadError) {
+            deshabilitarBoton('btn-guardar-pedido', false);
+            mostrarMensaje('msg-pedido', 'Error al subir imagen: ' + uploadError.message, false);
+            return;
+        }
+
+        const { data: publicUrl } = db.storage.from('comprobantes').getPublicUrl(fileName);
+        urlComprobante = publicUrl.publicUrl;
     }
 
+    // 2. GUARDAR PEDIDO
+    const { data: pedido, error: errPedido } = await db.from('pedidos').insert([{
+        id_cliente: cliente_id,
+        id_repartidor: repartidor_id,
+        total,
+        metodo_pago,
+        estado: 'Pendiente',
+        foto_comprobante: urlComprobante
+    }]).select().single();
+
+    if (errPedido) {
+        deshabilitarBoton('btn-guardar-pedido', false);
+        mostrarMensaje('msg-pedido', 'Error: ' + errPedido.message, false);
+        return;
+    }
+
+    const detalles = itemsValidos.map(i => ({
+        id_pedido: pedido.id_pedido,
+        id_producto: i.producto_id,
+        cantidad: i.cantidad,
+        precio_unitario: i.precio
+    }));
+
+    const { error: errDetalle } = await db.from('detalle_pedido').insert(detalles);
+
+    if (errDetalle) {
+        await db.from('pedidos').delete().eq('id_pedido', pedido.id_pedido);
+        deshabilitarBoton('btn-guardar-pedido', false);
+        mostrarMensaje('msg-pedido', 'Error en detalles: ' + errDetalle.message, false);
+        return;
+    }
+
+    // Actualizar stock
+    for (const item of itemsValidos) {
+        const { data: prod } = await db.from('productos').select('stock').eq('id_producto', item.producto_id).single();
+        if (prod) {
+            await db.from('productos').update({ stock: prod.stock - item.cantidad }).eq('id_producto', item.producto_id);
+        }
+    }
+
+    deshabilitarBoton('btn-guardar-pedido', false);
     mostrarMensaje('msg-pedido', 'Pedido registrado correctamente', true);
+
     itemsPedido = [];
     document.getElementById('detalle-pedido').innerHTML = '';
     recalcularTotal();
     cargarPedidos();
+    cargarDashboard();
+    cargarProductos();
+    setTimeout(() => cerrarModal('modal-pedido'), 1000);
 }
 
 async function cargarPedidos() {
-    const { data } = await db.from('pedidos').select('*, clientes(nombre, apellido), repartidores(nombre)').order('id_pedido', { ascending: false });
+    try {
+        const { data } = await db.from('pedidos')
+            .select('*, clientes(nombre, apellido), repartidores(nombre)')
+            .order('id_pedido', { ascending: false });
+        pedidosCache = data || [];
+        renderizarPedidos(pedidosCache);
+        actualizarContadoresPedidos();
+    } catch (e) {
+        console.error('Error pedidos:', e);
+    }
+}
+
+function renderizarPedidos(pedidos) {
     const tbody = document.querySelector('#tabla-pedidos tbody');
     tbody.innerHTML = '';
-    (data || []).forEach(p => {
-        let badge = p.estado === 'Entregado' ? 'verde' : p.estado === 'Cancelado' ? 'rojo' : 'amarillo';
-        tbody.innerHTML += `<tr><td>${p.id_pedido}</td><td>${p.clientes?.nombre || '-'}</td>
-            <td>${p.repartidores?.nombre || 'Sin asignar'}</td><td><span class="badge ${badge}">${p.estado}</span></td>
-            <td>${formatearBs(p.total)}</td><td>${p.metodo_pago || '-'}</td></tr>`;
+    if (!pedidos || pedidos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--texto-tenue);">No hay pedidos</td></tr>';
+        return;
+    }
+    pedidos.forEach(p => {
+        const opcionesEstado = ['Pendiente', 'Preparando', 'En camino', 'Entregado', 'Cancelado']
+            .map(e => `<option value="${e}" ${p.estado === e ? 'selected' : ''}>${e}</option>`).join('');
+
+        const botonFoto = p.foto_comprobante 
+            ? `<a href="${p.foto_comprobante}" target="_blank" class="btn-foto">📷 Recibo</a>` 
+            : '';
+
+        tbody.innerHTML += `<tr>
+            <td>#${String(p.id_pedido).padStart(3,'0')}</td>
+            <td>${p.clientes?.nombre || '-'} ${p.clientes?.apellido || ''}</td>
+            <td>${formatearFecha(p.fecha)}</td>
+            <td>${p.repartidores?.nombre || 'Sin asignar'}</td>
+            <td>${formatearBs(p.total)}</td>
+            <td>${p.metodo_pago || '-'}</td>
+            <td><span class="badge ${badgeEstado(p.estado)}">${p.estado}</span></td>
+            <td style="white-space:nowrap;">
+                <button onclick="verDetallePedido(${p.id_pedido})" style="width:auto; padding:6px 10px; font-size:11px; margin:0 2px; background:var(--info);">Ver</button>
+                ${botonFoto}
+                <select class="selector-estado" onchange="cambiarEstadoPedido(${p.id_pedido}, this.value)" style="margin:0 2px;">
+                    ${opcionesEstado}
+                </select>
+            </td>
+        </tr>`;
     });
 }
 
+function filtrarPedidos() {
+    const texto = document.getElementById('filtro-buscar-pedido').value.toLowerCase();
+    const estado = document.getElementById('filtro-estado-pedido').value;
+    const fecha = document.getElementById('filtro-fecha-pedido').value;
+
+    const filtrados = pedidosCache.filter(p => {
+        const nombreCliente = `${p.clientes?.nombre || ''} ${p.clientes?.apellido || ''}`.toLowerCase();
+        const idPedido = `#${String(p.id_pedido).padStart(3,'0')}`.toLowerCase();
+        const coincideTexto = !texto || nombreCliente.includes(texto) || idPedido.includes(texto) || String(p.id_pedido).includes(texto);
+        const coincideEstado = !estado || p.estado === estado;
+        let coincideFecha = true;
+        if (fecha) {
+            const fechaPedido = (p.fecha || '').toString().slice(0, 10);
+            coincideFecha = fechaPedido === fecha;
+        }
+        return coincideTexto && coincideEstado && coincideFecha;
+    });
+    renderizarPedidos(filtrados);
+}
+
+function limpiarFiltrosPedidos() {
+    document.getElementById('filtro-buscar-pedido').value = '';
+    document.getElementById('filtro-estado-pedido').value = '';
+    document.getElementById('filtro-fecha-pedido').value = '';
+    renderizarPedidos(pedidosCache);
+}
+
+function actualizarContadoresPedidos() {
+    const conteos = { 'Pendiente': 0, 'Preparando': 0, 'En camino': 0, 'Entregado': 0, 'Cancelado': 0 };
+    pedidosCache.forEach(p => { if (conteos[p.estado] !== undefined) conteos[p.estado]++; });
+    document.getElementById('cont-pendiente').textContent = conteos['Pendiente'];
+    document.getElementById('cont-preparando').textContent = conteos['Preparando'];
+    document.getElementById('cont-camino').textContent = conteos['En camino'];
+    document.getElementById('cont-entregado').textContent = conteos['Entregado'];
+    document.getElementById('cont-cancelado').textContent = conteos['Cancelado'];
+}
+
+async function cambiarEstadoPedido(idPedido, nuevoEstado) {
+    if (nuevoEstado === 'Cancelado' && !confirm('¿Estás seguro de cancelar este pedido? El stock NO se repondrá automáticamente.')) {
+        cargarPedidos();
+        return;
+    }
+    const { error } = await db.from('pedidos').update({ estado: nuevoEstado }).eq('id_pedido', idPedido);
+    if (error) { alert('Error: ' + error.message); return; }
+    cargarPedidos();
+    cargarDashboard();
+}
+
+async function verDetallePedido(idPedido) {
+    try {
+        const { data: pedido } = await db.from('pedidos')
+            .select('*, clientes(nombre, apellido), repartidores(nombre)')
+            .eq('id_pedido', idPedido)
+            .single();
+
+        if (!pedido) { alert('Pedido no encontrado'); return; }
+
+        const { data: detalles } = await db.from('detalle_pedido')
+            .select('*, productos(nombre)')
+            .eq('id_pedido', idPedido);
+
+        document.getElementById('detalle-pedido-titulo').textContent =
+            `Pedido #${String(idPedido).padStart(3,'0')} — ${pedido.clientes?.nombre || ''} ${pedido.clientes?.apellido || ''}`;
+
+        let subtotal = 0;
+        let filas = '';
+        (detalles || []).forEach(d => {
+            const st = d.cantidad * Number(d.precio_unitario);
+            subtotal += st;
+            filas += `<tr>
+                <td>${d.productos?.nombre || 'ID ' + d.id_producto}</td>
+                <td>${d.cantidad}</td>
+                <td>${formatearBs(d.precio_unitario)}</td>
+                <td>${formatearBs(st)}</td>
+            </tr>`;
+        });
+
+        const delivery = Number(pedido.total) - subtotal;
+        
+        const linkFoto = pedido.foto_comprobante 
+            ? `<div style="margin-top:15px; text-align:center;">
+                 <a href="${pedido.foto_comprobante}" target="_blank" class="btn-foto" style="font-size:14px; padding:10px 20px;">📄 Ver Comprobante de Pago</a>
+               </div>` 
+            : '';
+
+        document.getElementById('detalle-pedido-contenido').innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:20px;">
+                <div><strong>Cliente:</strong> ${pedido.clientes?.nombre || '-'} ${pedido.clientes?.apellido || ''}</div>
+                <div><strong>Fecha:</strong> ${formatearFecha(pedido.fecha)}</div>
+                <div><strong>Repartidor:</strong> ${pedido.repartidores?.nombre || 'Sin asignar'}</div>
+                <div><strong>Método de Pago:</strong> ${pedido.metodo_pago || '-'}</div>
+                <div><strong>Estado:</strong> <span class="badge ${badgeEstado(pedido.estado)}">${pedido.estado}</span></div>
+            </div>
+            <table class="tabla-detalle-pedido">
+                <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th><th>Subtotal</th></tr></thead>
+                <tbody>${filas || '<tr><td colspan="4" style="text-align:center;">Sin productos</td></tr>'}</tbody>
+            </table>
+            <div class="resumen-totales">
+                <div class="linea"><span>Subtotal:</span><span>${formatearBs(subtotal)}</span></div>
+                <div class="linea"><span>Delivery:</span><span>${formatearBs(delivery)}</span></div>
+                <div class="linea total"><span>TOTAL:</span><span>${formatearBs(pedido.total)}</span></div>
+            </div>
+            ${linkFoto}
+        `;
+        document.getElementById('modal-detalle-pedido').classList.add('activo');
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+// ==========================================
 // IMPORTACIONES
+// ==========================================
 async function registrarImportacion() {
+    const idProveedor = parseInt(document.getElementById('imp_proveedor').value);
+    const fecha = document.getElementById('imp_fecha').value;
+    const envio = parseFloat(document.getElementById('imp_costo_envio').value) || 0;
+    const impuestos = parseFloat(document.getElementById('imp_impuestos').value) || 0;
+    const fotoInput = document.getElementById('imp_foto');
+
+    if (!idProveedor) { mostrarMensaje('msg-importacion', 'Selecciona un proveedor', false); return; }
+    if (!fecha) { mostrarMensaje('msg-importacion', 'Selecciona una fecha', false); return; }
+    if (envio < 0 || impuestos < 0) { mostrarMensaje('msg-importacion', 'Los costos deben ser ≥ 0', false); return; }
+
+    deshabilitarBoton('btn-guardar-importacion', true);
+    let urlRecibo = null;
+
+    // 1. SUBIR FOTO
+    if (fotoInput.files.length > 0) {
+        mostrarMensaje('msg-importacion', 'Subiendo recibo...', true);
+        const file = fotoInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `importacion_${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await db.storage
+            .from('comprobantes')
+            .upload(fileName, file);
+
+        if (uploadError) {
+            deshabilitarBoton('btn-guardar-importacion', false);
+            mostrarMensaje('msg-importacion', 'Error al subir recibo: ' + uploadError.message, false);
+            return;
+        }
+
+        const { data: publicUrl } = db.storage.from('comprobantes').getPublicUrl(fileName);
+        urlRecibo = publicUrl.publicUrl;
+    }
+
+    // 2. GUARDAR IMPORTACION
     const datos = {
-        id_proveedor: parseInt(document.getElementById('imp_proveedor').value),
-        fecha: document.getElementById('imp_fecha').value,
-        costo_total: (parseFloat(document.getElementById('imp_costo_envio').value) || 0) + (parseFloat(document.getElementById('imp_impuestos').value) || 0),
-        estado: 'Pendiente'
+        id_proveedor: idProveedor,
+        fecha,
+        costo_total: envio + impuestos,
+        estado: 'Pendiente',
+        foto_recibo: urlRecibo
     };
-    if (!datos.id_proveedor || !datos.fecha) { mostrarMensaje('msg-importacion', 'Seleccione proveedor y fecha', false); return; }
+
     const { error } = await db.from('importaciones').insert([datos]);
+    deshabilitarBoton('btn-guardar-importacion', false);
+
     if (error) { mostrarMensaje('msg-importacion', 'Error: ' + error.message, false); return; }
     mostrarMensaje('msg-importacion', 'Importación registrada', true);
     cargarImportaciones();
+    setTimeout(() => cerrarModal('modal-importacion'), 1000);
 }
 
 async function cargarImportaciones() {
-    const { data } = await db.from('importaciones').select('*, proveedores(nombre)').order('id_importacion', { ascending: false });
-    const tbody = document.querySelector('#tabla-importaciones tbody');
-    tbody.innerHTML = '';
-    (data || []).forEach(i => {
-        let badge = i.estado === 'Recibida' ? 'verde' : i.estado === 'Cancelada' ? 'rojo' : 'amarillo';
-        tbody.innerHTML += `<tr><td>${i.id_importacion}</td><td>${i.proveedores?.nombre || '-'}</td>
-            <td>${i.fecha || '-'}</td><td>${formatearBs(i.costo_total)}</td>
-            <td><span class="badge ${badge}">${i.estado}</span></td></tr>`;
-    });
+    try {
+        const { data } = await db.from('importaciones')
+            .select('*, proveedores(nombre)')
+            .order('id_importacion', { ascending: false });
+
+        const tbody = document.querySelector('#tabla-importaciones tbody');
+        tbody.innerHTML = '';
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--texto-tenue);">No hay importaciones</td></tr>';
+            return;
+        }
+        data.forEach(i => {
+            const badge = i.estado === 'Recibida' ? 'verde' : i.estado === 'Cancelada' ? 'rojo' : 'amarillo';
+            const botonRecibo = i.foto_recibo
+                ? `<a href="${i.foto_recibo}" target="_blank" class="btn-foto">📷 Ver Recibo</a>`
+                : '-';
+
+            tbody.innerHTML += `<tr>
+                <td>${i.id_importacion}</td>
+                <td>${i.proveedores?.nombre || '-'}</td>
+                <td>${i.fecha || '-'}</td>
+                <td>${formatearBs(i.costo_total)}</td>
+                <td><span class="badge ${badge}">${i.estado}</span></td>
+                <td>${botonRecibo}</td>
+            </tr>`;
+        });
+    } catch (e) {
+        console.error('Error importaciones:', e);
+    }
 }
 
+// ==========================================
 // REPORTES
+// ==========================================
 async function cargarStockBajo() {
     const { data } = await db.from('productos').select('*').eq('estado', true);
     const tbody = document.querySelector('#tabla-stock-bajo tbody');
     tbody.innerHTML = '';
-    (data || []).filter(p => p.stock <= p.stock_minimo).forEach(p => {
-        tbody.innerHTML += `<tr><td>P-${String(p.id_producto).padStart(3,'0')}</td><td>${p.nombre}</td>
-            <td>${p.stock}</td><td>${p.stock_minimo}</td><td><span class="badge rojo">Reponer</span></td></tr>`;
+    const filtrados = (data || []).filter(p => p.stock <= p.stock_minimo);
+    if (filtrados.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--texto-tenue);">Todo el stock está OK</td></tr>';
+        return;
+    }
+    filtrados.forEach(p => {
+        tbody.innerHTML += `<tr>
+            <td>P-${String(p.id_producto).padStart(3,'0')}</td>
+            <td>${p.nombre}</td>
+            <td>${p.stock}</td>
+            <td>${p.stock_minimo}</td>
+            <td>${badgeStock(p.stock, p.stock_minimo)}</td>
+        </tr>`;
     });
 }
 
@@ -818,18 +1769,37 @@ async function cargarVentasPorProducto() {
         mapa[d.id_producto].cantidad += d.cantidad;
         mapa[d.id_producto].total += d.cantidad * Number(d.precio_unitario);
     });
+
     const { data: prods } = await db.from('productos').select('*');
     const tbody = document.querySelector('#tabla-ventas tbody');
     tbody.innerHTML = '';
-    Object.keys(mapa).forEach(pid => {
+
+    const ids = Object.keys(mapa).sort((a, b) => mapa[b].total - mapa[a].total);
+    if (ids.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:var(--texto-tenue);">No hay ventas registradas</td></tr>';
+        return;
+    }
+    ids.forEach(pid => {
         const p = (prods || []).find(x => x.id_producto === parseInt(pid));
         if (!p) return;
-        tbody.innerHTML += `<tr><td>${p.nombre}</td><td>${mapa[pid].cantidad}</td><td>${formatearBs(mapa[pid].total)}</td></tr>`;
+        tbody.innerHTML += `<tr>
+            <td>${p.nombre}</td>
+            <td>${mapa[pid].cantidad}</td>
+            <td>${formatearBs(mapa[pid].total)}</td>
+        </tr>`;
     });
 }
 
+// ==========================================
 // INICIO
+// ==========================================
 window.addEventListener('DOMContentLoaded', verificarSesion);
+
+document.querySelectorAll('.modal-fondo').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('activo');
+    });
+});
 </script>
 </body>
 </html>
