@@ -290,7 +290,7 @@
         @keyframes fadeInModal { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideInModal { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* ---------- DETALLE PEDIDO ---------- */
+        /* ---------- DETALLE PEDIDO MODAL ---------- */
         .tabla-detalle-pedido { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
         .tabla-detalle-pedido th { background: var(--bg-secundario); color: var(--morado-claro); padding: 10px; text-align: left; }
         .tabla-detalle-pedido td { padding: 10px; border-bottom: 1px solid var(--borde); }
@@ -299,6 +299,17 @@
         .resumen-totales .linea.total { font-size: 18px; font-weight: 700; color: var(--morado-claro); border-top: 1px solid var(--borde); margin-top: 10px; padding-top: 10px; }
 
         .selector-estado { padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; background: var(--bg-secundario); color: var(--texto); border: 1px solid var(--borde); }
+        
+        /* ESTILOS NUEVOS PARA BLOQUEO DE ESTADO */
+        .estado-container { display: flex; gap: 5px; align-items: center; margin-top: 0; }
+        .estado-container select { width: auto; flex: 1; padding: 4px 8px; font-size: 11px; margin-top: 0; }
+        .btn-guardar-estado {
+            margin-top: 0; padding: 5px 10px; width: auto; font-size: 10px;
+            background: var(--exito); border-color: var(--exito); border-radius: 5px;
+            white-space: nowrap;
+        }
+        .btn-guardar-estado:hover { background: #4a8d6b; }
+        .btn-guardar-estado:disabled { background: var(--texto-tenue); border-color: var(--texto-tenue); cursor: not-allowed; opacity: 0.5; }
 
         .btn-foto {
             display: inline-block; padding: 6px 10px; font-size: 11px; 
@@ -321,6 +332,8 @@
             .modal-contenido { padding: 20px; }
             .filtros-bar { flex-direction: column; }
             .filtros-bar input, .filtros-bar select, .filtros-bar button { width: 100%; }
+            .estado-container { flex-direction: column; align-items: stretch; }
+            .btn-guardar-estado { width: 100%; }
         }
     </style>
 </head>
@@ -337,7 +350,6 @@
     <label>Contraseña</label>
     <input type="password" id="login-password" placeholder="********">
     <button id="btn-login" onclick="iniciarSesion()">Iniciar Sesión</button>
-    <button class="secundario" onclick="registrarUsuario()">Crear Cuenta Nueva</button>
     <div id="msg-login" class="mensaje"></div>
 </div>
 
@@ -663,7 +675,7 @@
             <div><label>Costo Delivery (Bs)</label><input type="number" id="ped_costo_delivery" value="0" step="0.01" min="0"></div>
         </div>
         
-        <!-- NUEVO: SUBIR COMPROBANTE -->
+        <!-- SUBIR COMPROBANTE -->
         <label>Subir Comprobante de Pago (Foto QR, Recibo, etc)</label>
         <input type="file" id="ped_foto" accept="image/*">
 
@@ -696,7 +708,7 @@
         <label>Costo Envío (Bs)</label><input type="number" id="imp_costo_envio" step="0.01" min="0" value="0">
         <label>Impuestos (Bs)</label><input type="number" id="imp_impuestos" step="0.01" min="0" value="0">
         
-        <!-- NUEVO: SUBIR RECIBO -->
+        <!-- SUBIR RECIBO -->
         <label>Subir Recibo/Factura (Foto)</label>
         <input type="file" id="imp_foto" accept="image/*">
 
@@ -797,17 +809,6 @@ async function iniciarSesion() {
     else { msg.textContent = '¡Bienvenido!'; msg.className = 'mensaje ok'; setTimeout(() => verificarSesion(), 800); }
 }
 
-async function registrarUsuario() {
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    const msg = document.getElementById('msg-login');
-    if (!email || !password) { msg.textContent = 'Llena todos los campos'; msg.className = 'mensaje error'; return; }
-
-    const { error } = await db.auth.signUp({ email, password });
-    if (error) { msg.textContent = 'Error: ' + error.message; msg.className = 'mensaje error'; }
-    else { msg.textContent = 'Usuario creado. Ya puedes iniciar sesión.'; msg.className = 'mensaje ok'; }
-}
-
 async function cerrarSesion() {
     await db.auth.signOut();
     location.reload();
@@ -835,9 +836,8 @@ function abrirModal(id) {
     const msg = document.querySelector(`#${id} .mensaje`);
     if (msg) msg.className = 'mensaje';
 
-    // Limpiar campos de texto y números
     document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(input => {
-        if (input.type === 'file') input.value = ''; // Limpiar archivos
+        if (input.type === 'file') input.value = '';
         else if (input.type === 'number') input.value = (input.id === 'p_stock_minimo' || input.id === 'ped_costo_delivery' || input.id === 'imp_costo_envio' || input.id === 'imp_impuestos') ? input.defaultValue : '';
         else if (input.type === 'date') input.value = '';
         else input.value = '';
@@ -1440,13 +1440,14 @@ async function registrarPedido() {
         urlComprobante = publicUrl.publicUrl;
     }
 
-    // 2. GUARDAR PEDIDO
+    // 2. GUARDAR PEDIDO (estado_bloqueado por defecto false)
     const { data: pedido, error: errPedido } = await db.from('pedidos').insert([{
         id_cliente: cliente_id,
         id_repartidor: repartidor_id,
         total,
         metodo_pago,
         estado: 'Pendiente',
+        estado_bloqueado: false,
         foto_comprobante: urlComprobante
     }]).select().single();
 
@@ -1513,8 +1514,26 @@ function renderizarPedidos(pedidos) {
         return;
     }
     pedidos.forEach(p => {
-        const opcionesEstado = ['Pendiente', 'Preparando', 'En camino', 'Entregado', 'Cancelado']
-            .map(e => `<option value="${e}" ${p.estado === e ? 'selected' : ''}>${e}</option>`).join('');
+        let celdaEstado = '';
+        
+        // Lógica: Si estado_bloqueado es FALSE, mostrar selector y botón
+        if (p.estado_bloqueado === false) {
+            celdaEstado = `
+                <div class="estado-container">
+                    <select id="select-estado-${p.id_pedido}">
+                        <option value="Pendiente" ${p.estado === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                        <option value="En preparación" ${p.estado === 'En preparación' || p.estado === 'Preparando' ? 'selected' : ''}>En preparación</option>
+                        <option value="En camino" ${p.estado === 'En camino' ? 'selected' : ''}>En camino</option>
+                        <option value="Entregado" ${p.estado === 'Entregado' ? 'selected' : ''}>Entregado</option>
+                        <option value="Cancelado" ${p.estado === 'Cancelado' ? 'selected' : ''}>Cancelado</option>
+                    </select>
+                    <button class="btn-guardar-estado" id="btn-estado-${p.id_pedido}" onclick="guardarEstadoPedido(${p.id_pedido})">GUARDAR ESTADO</button>
+                </div>
+            `;
+        } else {
+            // Si ya está bloqueado, mostrar solo el badge
+            celdaEstado = `<span class="badge ${badgeEstado(p.estado)}">${p.estado}</span>`;
+        }
 
         const botonFoto = p.foto_comprobante 
             ? `<a href="${p.foto_comprobante}" target="_blank" class="btn-foto">📷 Recibo</a>` 
@@ -1527,16 +1546,58 @@ function renderizarPedidos(pedidos) {
             <td>${p.repartidores?.nombre || 'Sin asignar'}</td>
             <td>${formatearBs(p.total)}</td>
             <td>${p.metodo_pago || '-'}</td>
-            <td><span class="badge ${badgeEstado(p.estado)}">${p.estado}</span></td>
+            <td>${celdaEstado}</td>
             <td style="white-space:nowrap;">
                 <button onclick="verDetallePedido(${p.id_pedido})" style="width:auto; padding:6px 10px; font-size:11px; margin:0 2px; background:var(--info);">Ver</button>
                 ${botonFoto}
-                <select class="selector-estado" onchange="cambiarEstadoPedido(${p.id_pedido}, this.value)" style="margin:0 2px;">
-                    ${opcionesEstado}
-                </select>
             </td>
         </tr>`;
     });
+}
+
+// FUNCIÓN PARA GUARDAR Y BLOQUEAR
+async function guardarEstadoPedido(id_pedido) {
+    const select = document.getElementById(`select-estado-${id_pedido}`);
+    const btn = document.getElementById(`btn-estado-${id_pedido}`);
+    const nuevoEstado = select.value;
+
+    // Bloqueo visual inmediato
+    select.disabled = true;
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    // Verificar primero que no esté bloqueado en la BD
+    const { data: pedidoActual, error: errCheck } = await db.from('pedidos')
+        .select('estado_bloqueado')
+        .eq('id_pedido', id_pedido)
+        .single();
+
+    if (errCheck || pedidoActual.estado_bloqueado) {
+        alert('Error: Este pedido ya fue bloqueado por otro usuario.');
+        cargarPedidos(); // Recargar para mostrar el estado real
+        return;
+    }
+
+    // Actualizar en Supabase
+    const { error } = await db.from('pedidos')
+        .update({ 
+            estado: nuevoEstado, 
+            estado_bloqueado: true 
+        })
+        .eq('id_pedido', id_pedido)
+        .eq('estado_bloqueado', false); // Condición estricta para evitar concurrencia
+
+    if (error) {
+        alert('Error al guardar: ' + error.message);
+        select.disabled = false;
+        btn.disabled = false;
+        btn.textContent = 'GUARDAR ESTADO';
+    } else {
+        // Mensaje de confirmación exacto
+        alert('Estado guardado correctamente. El pedido ya no se puede editar.');
+        cargarPedidos(); // Recargar la tabla para reflejar la etiqueta bloqueada
+        cargarDashboard();
+    }
 }
 
 function filtrarPedidos() {
@@ -1567,24 +1628,17 @@ function limpiarFiltrosPedidos() {
 }
 
 function actualizarContadoresPedidos() {
-    const conteos = { 'Pendiente': 0, 'Preparando': 0, 'En camino': 0, 'Entregado': 0, 'Cancelado': 0 };
-    pedidosCache.forEach(p => { if (conteos[p.estado] !== undefined) conteos[p.estado]++; });
+    const conteos = { 'Pendiente': 0, 'En preparación': 0, 'En camino': 0, 'Entregado': 0, 'Cancelado': 0 };
+    // Mapear 'Preparando' a 'En preparación' por si acaso
+    pedidosCache.forEach(p => { 
+        let est = p.estado === 'Preparando' ? 'En preparación' : p.estado;
+        if (conteos[est] !== undefined) conteos[est]++; 
+    });
     document.getElementById('cont-pendiente').textContent = conteos['Pendiente'];
-    document.getElementById('cont-preparando').textContent = conteos['Preparando'];
+    document.getElementById('cont-preparando').textContent = conteos['En preparación'];
     document.getElementById('cont-camino').textContent = conteos['En camino'];
     document.getElementById('cont-entregado').textContent = conteos['Entregado'];
     document.getElementById('cont-cancelado').textContent = conteos['Cancelado'];
-}
-
-async function cambiarEstadoPedido(idPedido, nuevoEstado) {
-    if (nuevoEstado === 'Cancelado' && !confirm('¿Estás seguro de cancelar este pedido? El stock NO se repondrá automáticamente.')) {
-        cargarPedidos();
-        return;
-    }
-    const { error } = await db.from('pedidos').update({ estado: nuevoEstado }).eq('id_pedido', idPedido);
-    if (error) { alert('Error: ' + error.message); return; }
-    cargarPedidos();
-    cargarDashboard();
 }
 
 async function verDetallePedido(idPedido) {
